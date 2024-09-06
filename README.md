@@ -21,7 +21,7 @@ Unlike typical full-stack development approaches that rely on Node.js, Express.j
 - **JavaScript** (optional): May be used for enhanced interactivity, but will be minimized in favor of server-side processing.
 
 ## Directory Structure
-
+```plaintext
 ├── assets
 │   ├── css/               # Stylesheets
 │   ├── images/            # Image assets
@@ -45,7 +45,7 @@ Unlike typical full-stack development approaches that rely on Node.js, Express.j
 │   └── code-reviews.md    # Writeups on code architecture and reviews
 │
 └── README.md              # Project overview
-
+```
 ## Future Extensions
 
 While the initial implementation uses file-based storage, the framework can later be extended to support more complex storage mechanisms such as relational databases, providing greater flexibility and scalability.
