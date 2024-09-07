@@ -4,7 +4,7 @@
 
 The goal of this project is to create a robust, scalable framework for interactive fiction using only **HTML**, **CSS**, **PHP**, and **JavaScript** (if necessary). This framework will allow for the creation and display of interactive stories that record player choices for data analysis.
 
-Unlike typical full-stack development approaches that rely on Node.js, Express.js, MongoDB, and React, this project aims to execute everything on a simpler stack by leveraging PHP for server-side processing and file-based storage (or databases if extended later).
+Unlike typical full-stack development approaches, this project aims to execute everything on a simpler stack by leveraging PHP for server-side processing and file-based storage (or databases if extended later).
 
 ## Features
 

@@ -2,7 +2,7 @@
 
 ## **Week 1-2: Initial Planning and Setup**
 - **Objectives**: 
-  - Finalize the project structure and set up your local development environment.
+  - Finalize the project structure and set up local development environment.
   - Create the basic file structure and placeholder files for HTML, CSS, PHP.
   - Define initial requirements, user stories, and project goals.
 - **Deliverables**: 
