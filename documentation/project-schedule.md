@@ -26,7 +26,6 @@
 - **Deliverables**:
   - `header.php`, `footer.php`, and other modular PHP components.
   - Styling for the core layout using `assets/css/`.
-
 ## **Week 7: Analytics Setup**
 - **Objectives**: 
   - Set up basic analytics for tracking user choices and interactions.
