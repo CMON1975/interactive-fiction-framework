@@ -1,14 +1,23 @@
-<?php
-$servername = "localhost";
-$username = "cmon1975";
-$password = "Password1!";
-$dbname = "interactive_fiction_db";
+<!DOCTYPE html>
+<html lang="en">
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New User</title>
+</head>
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-echo "Connected successfully";
+<body>
+    <h2>Create New User</h2>
+    <form action="/backend/create_user.php" method="POST">
+        <label for="name">Username:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <button type="submit">Create User</button>
+    </form>
+</body>
+
+</html>
