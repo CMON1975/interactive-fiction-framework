@@ -49,33 +49,47 @@
 - Given the time constraint, it is a risk to learn structured formats rather than leverage existing MySQL knowledge.
 - MySQL allows export to CSV, which would allow conversion to other structured formats. A possible extension could such an export/convert function.
 - Decision: Use MySQL until it becomes untenable.
+
 ### Users Table:
-- ID: `INT AUTO_INCREMENT PRIMARY KEY`
-- Name: `VARCHAR(50) UNIQUE`
-- Password: `VARCHAR(255)` (for hashed password storage)
-- EULA Agreement: `BOOLEAN` (additional timestamp?)
-- Data Collection Agreement: `BOOLEAN` (timestamp?)
-- Preferences: (TBD, likely a `JSON` field to store user preferences and allow flexibility for extension.)
+- ID: INT AUTO_INCREMENT PRIMARY KEY
+- Name: VARCHAR(50) UNIQUE
+- Password: VARCHAR(255) (for hashed password storage)
+- EULA Agreement: BOOLEAN (additional timestamp?)
+- Data Collection Agreement: BOOLEAN (timestamp?)
+- Preferences: (TBD, likely a JSON field to store user preferences and allow flexibility for extension.)
+
+### Tags Table:
+- TagID: INT AUTO_INCREMENT PRIMARY KEY
+- TagName: VARCHAR(50) (unique tag name for stories)
 
 ### Stories Table:
-- ID: `INT AUTO_INCREMENT PRIMARY KEY`
-- Story Name: `VARCHAR(100)`
-- Tags `VARCHAR(255)` (a separate table to store tags for more flexible filtering?)
-- Passages Table:
-    - PassageID: `INT AUTO_INCREMENT PRIMARY KEY`
-    - StoryID: `INT` (foreign key to link it to the story)
-    - Text: `TEXT` (for the passage content)
-    - Choices Table:
-        - ChoiceID: `INT AUTO_INCREMENT PRIMARY KEY`
-        - PassageID: `INT` (references which passage this choice belongs to)
-        - ChoiceText: `VARCHAR(255)` (text shown to the user)
-        - NextPassageID: `INT` (foreign key linking to the next passage)
-        - IsFinal: `BOOLEAN` (marks if this leads to a story conclusion)
+- ID: INT AUTO_INCREMENT PRIMARY KEY
+- Story Name: VARCHAR(100)
+- Tags: (relationship defined through a join table, see StoryTags below)
+- StoryTags Table (Join table to associate stories with tags):
+- StoryID: INT (foreign key linking to the Stories table)
+- TagID: INT (foreign key linking to the Tags table)
+- PRIMARY KEY (StoryID, TagID)
 
-### Stories Played Table (Tracks Player Progress)
-- UserID: `INT` (foreign key to the users table)
-- StoryID: `INT` (foreign key to the stories table)
-- CurrentPassageID: `INT` (to track where the player is in the story)
+### Passages Table:
+- PassageID: INT AUTO_INCREMENT PRIMARY KEY
+- StoryID: INT (foreign key to link it to the Stories table)
+- Text: TEXT (for the passage content)
+
+### Choices Table:
+- ChoiceID: INT AUTO_INCREMENT PRIMARY KEY
+- PassageID: INT (references which passage this choice belongs to)
+- ChoiceText: VARCHAR(255) (text shown to the user)
+- NextPassageID: INT (foreign key linking to the next passage)
+- IsFinal: BOOLEAN (marks if this leads to a story conclusion)
+- Stories Played Table (Tracks Player Progress):
+- UserID: INT (foreign key to the Users table)
+- StoryID: INT (foreign key to the Stories table)
+- CurrentPassageID: INT (to track where the player is in the story)
+
+### Explanation:
+- Tags Table: Stores individual tags with a unique TagID and TagName.
+- StoryTags Table: This join table links stories to multiple tags using their respective IDs. This design allows for a many-to-many relationship between stories and tags, providing flexibility for tagging.
 
 - Project goal version:
     - Passage(s): text of individual, pre- or post-choice text
@@ -92,3 +106,73 @@
 Text: "You are standing at a crossroads. The way forward leads east or west."
 Choice 1: Go east (Link to Passage Number 2).
 Choice 2: Go west (Link to Passage Number 3).
+
+### Creation Commands
+```
+-- Create the database
+CREATE DATABASE story_db;
+
+-- Use the database
+USE story_db;
+
+-- Users Table
+CREATE TABLE Users (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(50) UNIQUE NOT NULL,
+    Password VARCHAR(255) NOT NULL,
+    EULA_Agreement BOOLEAN DEFAULT FALSE,
+    Data_Collection_Agreement BOOLEAN DEFAULT FALSE,
+    Preferences JSON
+);
+
+-- Tags Table
+CREATE TABLE Tags (
+    TagID INT AUTO_INCREMENT PRIMARY KEY,
+    TagName VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- Stories Table
+CREATE TABLE Stories (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Story_Name VARCHAR(100) NOT NULL
+);
+
+-- StoryTags Table (Join table between Stories and Tags)
+CREATE TABLE StoryTags (
+    StoryID INT NOT NULL,
+    TagID INT NOT NULL,
+    PRIMARY KEY (StoryID, TagID),
+    FOREIGN KEY (StoryID) REFERENCES Stories(ID) ON DELETE CASCADE,
+    FOREIGN KEY (TagID) REFERENCES Tags(TagID) ON DELETE CASCADE
+);
+
+-- Passages Table
+CREATE TABLE Passages (
+    PassageID INT AUTO_INCREMENT PRIMARY KEY,
+    StoryID INT NOT NULL,
+    Text TEXT NOT NULL,
+    FOREIGN KEY (StoryID) REFERENCES Stories(ID) ON DELETE CASCADE
+);
+
+-- Choices Table
+CREATE TABLE Choices (
+    ChoiceID INT AUTO_INCREMENT PRIMARY KEY,
+    PassageID INT NOT NULL,
+    ChoiceText VARCHAR(255) NOT NULL,
+    NextPassageID INT,
+    IsFinal BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (PassageID) REFERENCES Passages(PassageID) ON DELETE CASCADE,
+    FOREIGN KEY (NextPassageID) REFERENCES Passages(PassageID) ON DELETE SET NULL
+);
+
+-- Stories Played Table (Tracks Player Progress)
+CREATE TABLE StoriesPlayed (
+    UserID INT NOT NULL,
+    StoryID INT NOT NULL,
+    CurrentPassageID INT,
+    PRIMARY KEY (UserID, StoryID),
+    FOREIGN KEY (UserID) REFERENCES Users(ID) ON DELETE CASCADE,
+    FOREIGN KEY (StoryID) REFERENCES Stories(ID) ON DELETE CASCADE,
+    FOREIGN KEY (CurrentPassageID) REFERENCES Passages(PassageID) ON DELETE SET NULL
+);
+```
