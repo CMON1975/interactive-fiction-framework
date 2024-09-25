@@ -1,11 +1,15 @@
 # Project Structure and Local Development Environment
 - **Front end:** Basic HTML interface that gives creators access to creative tools and players access to published interactive fiction.
 - **Local development environment:** VS Code, MySQL database.
-- **Database initialization:** interactive_fiction_db
+- **Database initialization:** story_db
+- **Project title:** PASSAGES: Create and Explore Interactive Fiction
 ---
 ## Project Goals
 - Deliver a working prototype of website that allows both creation and playing of interactive fiction no later than December 6, 2024.
 ---
+## Deployment
+- Local development on home machine, backed up on public GitHub repository. Local testing with Apache/MySQL.
+- Remote deployment to subdomain of CMON1975.com, likely passages.CMON1975.com
 ## Thoughts
 ### landing page:
 - create account/login

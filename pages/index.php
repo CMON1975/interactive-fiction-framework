@@ -1,23 +1,34 @@
+<?php
+// Start the session
+session_start();
+
+// Check if the user is logged in
+$loggedIn = isset($_SESSION['user_id']);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create New User</title>
+    <title>Landing Page</title>
 </head>
 
 <body>
-    <h2>Create New User</h2>
-    <form action="/backend/create_user.php" method="POST">
-        <label for="name">Username:</label>
-        <input type="text" id="name" name="name" required><br><br>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
+    <h1>Passages: Create and Explore Interactive Fiction</h1>
 
-        <button type="submit">Create User</button>
-    </form>
+    <?php if ($loggedIn): ?>
+        <!-- Display the logged-in username -->
+        <p>Logged in as: <?php echo htmlspecialchars($_SESSION['username']); ?></p>
+        <!-- Display the Logout link if the user is logged in -->
+        <p><a href="backend/logout.php">Logout</a></p>
+    <?php else: ?>
+        <!-- Display the Login/Join link if the user is not logged in -->
+        <p><a href="backend/login.php">Login or Join</a></p>
+    <?php endif; ?>
+
 </body>
 
 </html>
