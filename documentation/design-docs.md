@@ -180,3 +180,9 @@ CREATE TABLE StoriesPlayed (
     FOREIGN KEY (CurrentPassageID) REFERENCES Passages(PassageID) ON DELETE SET NULL
 );
 ```
+
+---
+### Security Considerations
+- **CSRF Protection:** HTML forms must include CSRF tokens to prevent Cross-Site Request Forgery attacks.
+- **Input Validation:** Sanitize and validate all inputs. Use prepared statements with bound parameters to prevent SQL injection.
+- **Transaction Management:** Wrap deletion operations in transactions to maintain database integrity.
