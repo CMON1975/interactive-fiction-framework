@@ -4,6 +4,9 @@
 SOURCE_PAGES="../pages/"
 SOURCE_BACKEND="../backend/"
 
+# Define the local destination
+LOCAL_DEST="/var/www/html/"
+
 # Define the remote server and target directory
 REMOTE_SERVER="cmon1975.com"
 REMOTE_DIR="/var/www/if.cmon1975.com/"
@@ -12,11 +15,15 @@ REMOTE_DIR="/var/www/if.cmon1975.com/"
 TEMP_DIR="/tmp/deploy_temp/"
 
 # Ask for the sudo password upfront
-read -sp "Enter the sudo password for $REMOTE_SERVER: " SUDO_PASS
-echo
+# read -sp "Enter the sudo password for $REMOTE_SERVER: " SUDO_PASS
+# echo
 
 # Check if a flag was provided
 if [ "$1" == "--remote" ]; then
+    # Ask for the sudo password 
+    read -sp "Enter the sudo password for $REMOTE_SERVER: " SUDO_PASS
+    echo
+
     echo "Deploying to remote server $REMOTE_SERVER..."
 
     # Create a temporary directory on the remote server

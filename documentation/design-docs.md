@@ -186,3 +186,10 @@ CREATE TABLE StoriesPlayed (
 - **CSRF Protection:** HTML forms must include CSRF tokens to prevent Cross-Site Request Forgery attacks.
 - **Input Validation:** Sanitize and validate all inputs. Use prepared statements with bound parameters to prevent SQL injection.
 - **Transaction Management:** Wrap deletion operations in transactions to maintain database integrity.
+
+---
+### Playthrough Storage
+For users who are nog logged in, the system can't save their progress in `StoriesPlayed`. Instead, the system relies on the `passage_id` parameter in the URL to track their progress.
+- When a user makes a choice, they are directed to the next passage using the `passage_id` in the URL.
+- Restarting the story for them simply means redirecting them to the first passage.
+- This highlights the complexity of having circular passages (story loops, if you will). Absolutely a 2.0 feature.
