@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Include database configuration
-require 'backend/config.php';
+require '/var/www/php/if_config.php';
 
 // Generate a CSRF token if one does not exist
 if (empty($_SESSION['csrf_token'])) {

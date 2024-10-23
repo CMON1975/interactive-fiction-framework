@@ -8,7 +8,7 @@ error_reporting(E_ALL);
 session_start();
 
 // Include the database configuration
-require 'config.php';  // Include the database connection
+require '/var/www/php/if_config.php';  // Include the database connection
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

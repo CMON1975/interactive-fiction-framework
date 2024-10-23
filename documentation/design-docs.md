@@ -193,3 +193,24 @@ For users who are nog logged in, the system can't save their progress in `Storie
 - When a user makes a choice, they are directed to the next passage using the `passage_id` in the URL.
 - Restarting the story for them simply means redirecting them to the first passage.
 - This highlights the complexity of having circular passages (story loops, if you will). Absolutely a 2.0 feature.
+
+---
+### Future Extension Ideas
+- **Autosave Indicators** to inform users when data state changes.
+- **Undo/Redo Functionality** in addition to the standard text-entry UD/RD, ability to wholesale scrub passage/choice creation.
+- **Versioning** for reverting to previous versions.
+
+---
+
+---
+### TODO
+- **Existing Passage links:** Creating a new Passage for a new Choice is nice, but it should be optional to link to an existing Passage. While this would create the potential for circular logic, it is going to be a requirement because **only** creating new Passages leads to a sprawling mass of work for the Story author.
+- **Prevent advancement via Choice if Passage not saved.**
+- **Instructions/Help menu.**
+- **Include author's name and link to their stories in Story selection menu.**
+
+---
+### Changelog
+### 241023 
+- Added a script to `story_editor.php` to detect changes in the Passage field (currently completely broken on the test build).
+- Moved the database credentials to a "safe" directory for security purposes.

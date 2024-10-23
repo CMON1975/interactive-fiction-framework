@@ -32,16 +32,16 @@ if [ "$1" == "--remote" ]; then
 
     # Copy the contents of the pages directory to the remote server's temporary directory
     echo "Copying files from $SOURCE_PAGES to $REMOTE_SERVER:$TEMP_DIR"
-    scp -r $SOURCE_PAGES* $REMOTE_SERVER:$TEMP_DIR
+    rsync -avz $SOURCE_PAGES $REMOTE_SERVER:$TEMP_DIR
 
     # Ensure the backend directory exists in the temporary directory on the remote server
-    echo "Copying backend files to $TEMP_DIR/backend/ on $REMOTE_SERVER"
+    echo "Copying backend files to $TEMP_DIR/backend/ on $REMOTE_SERVER, excluding config.php"
     ssh $REMOTE_SERVER "mkdir -p $TEMP_DIR/backend/"
-    scp -r $SOURCE_BACKEND* $REMOTE_SERVER:$TEMP_DIR/backend/
+    rsync -avz --exclude "config.php" $SOURCE_BACKEND $REMOTE_SERVER:$TEMP_DIR/backend/
 
     # Move the files from the temporary directory to the final destination using sudo
     echo "Moving files from $TEMP_DIR to $REMOTE_DIR using sudo on $REMOTE_SERVER"
-    ssh $REMOTE_SERVER "echo $SUDO_PASS | sudo -S mv $TEMP_DIR* $REMOTE_DIR"
+    ssh $REMOTE_SERVER "echo $SUDO_PASS | sudo -S rsync -av $TEMP_DIR $REMOTE_DIR"
 
     # Clean up the temporary directory on the remote server
     ssh $REMOTE_SERVER "rm -rf $TEMP_DIR"
@@ -59,8 +59,8 @@ elif [ "$1" == "--local" ] || [ -z "$1" ]; then
     echo "Ensuring backend directory exists at $LOCAL_DEST/backend/"
     sudo mkdir -p $LOCAL_DEST/backend/
 
-    # Copy the backend/ folder locally
-    echo "Copying backend/ folder to $LOCAL_DEST/backend/"
+    # Copy the backend/ folder locally, including config.php
+    echo "Copying backend/ folder to $LOCAL_DEST/backend/, including config.php"
     sudo cp -r $SOURCE_BACKEND* $LOCAL_DEST/backend/
 
     echo "Local deployment complete."

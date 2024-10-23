@@ -1,5 +1,5 @@
 <?php
-include 'backend/config.php'; // Include your database configuration
+include '/var/www/php/if_config.php'; // Include your database configuration
 include 'backend/auth.php';   // Include your authentication functions
 
 // Check if user is logged in

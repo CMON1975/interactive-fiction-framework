@@ -1,5 +1,5 @@
 <?php
-include 'backend/config.php';
+include '/var/www/php/if_config.php';
 include 'backend/auth.php';
 
 // Start the session
