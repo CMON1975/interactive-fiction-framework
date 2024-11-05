@@ -345,85 +345,9 @@ if (empty($_SESSION['csrf_token'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Story Editor</title>
     <script>
-        // JavaScript to dynamically add/remove choice fields
-        function addChoice() {
-            const choicesDiv = document.getElementById('choices');
-            const choiceCount = choicesDiv.querySelectorAll('.choice').length;
-            const choiceHTML = `
-        <div class="choice">
-            <input type="text" name="choices_text[]" placeholder="Choice text" required>
-            
-            <label>
-                <input type="radio" name="link_type[${choiceCount}]" value="existing" checked onchange="toggleLinkType(this)"> Link to Existing Passage
-            </label>
-            <label>
-                <input type="radio" name="link_type[${choiceCount}]" value="new" onchange="toggleLinkType(this)"> Create New Passage
-            </label>
-            
-            <!-- Existing Passages Dropdown -->
-            <div class="link-existing">
-                <select name="existing_passage_id[]" required>
-                    <option value="">-- Select a Passage --</option>
-                    <?php foreach ($passages as $passage): ?>
-                        <option value="<?php echo $passage['PassageID']; ?>">
-                            <?php echo htmlspecialchars(substr($passage['Text'], 0, 50)); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <!-- New Passage Textarea -->
-            <div class="link-new" style="display: none;">
-                <textarea name="new_passage_text[]" placeholder="New passage text"></textarea>
-            </div>
-            
-            <button type="button" onclick="removeChoice(this)">Remove Choice</button>
-        </div>`;
-            choicesDiv.insertAdjacentHTML('beforeend', choiceHTML);
-        } //TODO? adjust name attributes with appropriate indexing if necessary to handle multiple choices correctly
-
-        function removeChoice(button) {
-            const choiceDiv = button.parentNode;
-            choiceDiv.remove();
-        }
-
-        // JavaScript function for confirmation
-        function confirmDelete() {
-            return confirm('Are you sure you want to delete this story and all its passages and choices? This action cannot be undone.');
-        }
-        // JavaScript function to toggle link type fields
-        function toggleLinkType(radio) {
-            const choiceDiv = radio.closest('.choice');
-            const linkExistingDiv = choiceDiv.querySelector('.link-existing');
-            const linkNewDiv = choiceDiv.querySelector('.link-new');
-
-            if (radio.value === 'existing') {
-                linkExistingDiv.style.display = 'block';
-                linkNewDiv.style.display = 'none';
-                // Make existing passage selection required
-                choiceDiv.querySelector('select[name="existing_passage_id[]"]').required = true;
-                // Remove required attribute from new passage text
-                choiceDiv.querySelector('textarea[name="new_passage_text[]"]').required = false;
-            } else {
-                linkExistingDiv.style.display = 'none';
-                linkNewDiv.style.display = 'block';
-                // Make new passage text required
-                choiceDiv.querySelector('textarea[name="new_passage_text[]"]').required = true;
-                // Remove required attribute from existing passage selection
-                choiceDiv.querySelector('select[name="existing_passage_id[]"]').required = false;
-            }
-        }
-
-        // Update the initial toggle state
-        document.addEventListener('DOMContentLoaded', function() {
-            const radioButtons = document.querySelectorAll('input[name="link_type[]"]');
-            radioButtons.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    toggleLinkType(this);
-                });
-            });
-        });
+        const passagesData = <?php echo $passages_json; ?>;
     </script>
+    <script src="backend/story_editor.js"></script>
 </head>
 
 <body>

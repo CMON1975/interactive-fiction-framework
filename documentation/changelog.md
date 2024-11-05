@@ -12,3 +12,5 @@
 - JavaScript for existing Passage/new Passage editing wired up and working. PHP implementation in /backend/editor.php seems to be working. I now have way too much working PHP/JavaScript in the story-editor.php code, but it's all functional.
 ### 241104
 - Added success message for Choice update. I need to deal with code duplication.
+### 241105
+- Decoupled the working JavaScript from story_editor.php and moved it to backend/story_editor.js
