@@ -204,6 +204,7 @@ For users who are nog logged in, the system can't save their progress in `Storie
 
 ### TODO
 - DONE **Existing Passage links:** Creating a new Passage for a new Choice is nice, but it should be optional to link to an existing Passage. While this would create the potential for circular logic, it is going to be a requirement because **only** creating new Passages leads to a sprawling mass of work for the Story author.
+- **PassageID Display:** Strictly necessary? Probably only needed for admin purposes (if that).
 - **Prevent advancement via Choice if Passage not saved.**
 - **Instructions/Help menu.**
 - **Include author's name and link to their stories in Story selection menu.**
