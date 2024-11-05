@@ -202,9 +202,8 @@ For users who are nog logged in, the system can't save their progress in `Storie
 
 ---
 
----
 ### TODO
-- **Existing Passage links:** Creating a new Passage for a new Choice is nice, but it should be optional to link to an existing Passage. While this would create the potential for circular logic, it is going to be a requirement because **only** creating new Passages leads to a sprawling mass of work for the Story author.
+- DONE **Existing Passage links:** Creating a new Passage for a new Choice is nice, but it should be optional to link to an existing Passage. While this would create the potential for circular logic, it is going to be a requirement because **only** creating new Passages leads to a sprawling mass of work for the Story author.
 - **Prevent advancement via Choice if Passage not saved.**
 - **Instructions/Help menu.**
 - **Include author's name and link to their stories in Story selection menu.**
@@ -213,4 +212,14 @@ For users who are nog logged in, the system can't save their progress in `Storie
 ### Changelog
 ### 241023 
 - Added a script to `story_editor.php` to detect changes in the Passage field (currently completely broken on the test build).
-- Moved the database credentials to a "safe" directory for security purposes.
+- Moved the database credentials to a "safe" directory for security purposes
+### 241030
+- Modified HTML form to include options for selecting existing Passage or creating new Passage (radio buttons)
+### 241101
+- Added dropdown of existing Passages for new passage selection option to link to existing.
+### 241102
+- Added small text area for new passage text rather than a jump to a new editor frame. Scared this will break a lot of logic but so far so good.
+### 241103
+- JavaScript for existing Passage/new Passage editing wired up and working. PHP implementation in /backend/editor.php seems to be working. I now have way too much working PHP/JavaScript in the story-editor.php code, but it's all functional.
+### 241104
+- Added success message for Choice update. I need to deal with code duplication.

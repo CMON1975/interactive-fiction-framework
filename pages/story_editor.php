@@ -17,6 +17,126 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Handle editing a choice
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_choice') {
+    // CSRF Protection
+    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        die('Invalid CSRF token');
+    }
+
+    $choice_id = intval($_POST['choice_id']);
+    $story_id = intval($_POST['story_id']);
+    $passage_id = intval($_POST['passage_id']);
+
+    try {
+        // Fetch the existing choice
+        $stmt = $pdo->prepare("SELECT ChoiceText, NextPassageID FROM Choices WHERE ChoiceID = :choice_id");
+        $stmt->execute([':choice_id' => $choice_id]);
+        $choice = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$choice) {
+            throw new Exception("Choice not found.");
+        }
+
+        // Fetch existing passages for the story
+        $passages = getPassagesByStoryId($pdo, $story_id);
+
+        // Display the edit form
+?>
+        <!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+            <meta charset="UTF-8">
+            <title>Edit Choice</title>
+            <script>
+                function toggleLinkTypeEdit(radio) {
+                    const choiceDiv = radio.closest('.choice');
+                    const linkExistingDiv = choiceDiv.querySelector('.link-existing');
+                    const linkNewDiv = choiceDiv.querySelector('.link-new');
+
+                    if (radio.value === 'existing') {
+                        linkExistingDiv.style.display = 'block';
+                        linkNewDiv.style.display = 'none';
+                        choiceDiv.querySelector('select[name="existing_passage_id"]').required = true;
+                        choiceDiv.querySelector('textarea[name="new_passage_text"]').required = false;
+                    } else {
+                        linkExistingDiv.style.display = 'none';
+                        linkNewDiv.style.display = 'block';
+                        choiceDiv.querySelector('textarea[name="new_passage_text"]').required = true;
+                        choiceDiv.querySelector('select[name="existing_passage_id"]').required = false;
+                    }
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const radioButtons = document.querySelectorAll('input[name="link_type"]');
+                    radioButtons.forEach(radio => {
+                        radio.addEventListener('change', function() {
+                            toggleLinkTypeEdit(this);
+                        });
+                    });
+                });
+            </script>
+        </head>
+
+        <body>
+            <h2>Edit Choice</h2>
+            <form method="POST">
+                <label for="choice_text">Choice Text:</label>
+                <input type="text" id="choice_text" name="choice_text" value="<?php echo htmlspecialchars($choice['ChoiceText']); ?>" required>
+
+                <br><br>
+
+                <label>
+                    <input type="radio" name="link_type" value="existing" <?php echo $choice['NextPassageID'] ? 'checked' : ''; ?> onchange="toggleLinkTypeEdit(this)"> Link to Existing Passage
+                </label>
+                <label>
+                    <input type="radio" name="link_type" value="new" <?php echo !$choice['NextPassageID'] ? 'checked' : ''; ?> onchange="toggleLinkTypeEdit(this)"> Create New Passage
+                </label>
+
+                <br><br>
+
+                <!-- Existing Passages Dropdown -->
+                <div class="link-existing" <?php echo $choice['NextPassageID'] ? 'style="display: block;"' : 'style="display: none;"'; ?>>
+                    <label for="existing_passage_id">Select Passage:</label>
+                    <select name="existing_passage_id" id="existing_passage_id">
+                        <option value="">-- Select a Passage --</option>
+                        <?php foreach ($passages as $p): ?>
+                            <option value="<?php echo $p['PassageID']; ?>" <?php echo ($p['PassageID'] == $choice['NextPassageID']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars(substr($p['Text'], 0, 50)); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- New Passage Textarea -->
+                <div class="link-new" <?php echo !$choice['NextPassageID'] ? 'style="display: block;"' : 'style="display: none;"'; ?>>
+                    <label for="new_passage_text">New Passage Text:</label>
+                    <textarea name="new_passage_text" id="new_passage_text" placeholder="Enter new passage text"></textarea>
+                </div>
+
+                <br>
+
+                <input type="hidden" name="choice_id" value="<?php echo $choice_id; ?>">
+                <input type="hidden" name="story_id" value="<?php echo $story_id; ?>">
+                <input type="hidden" name="passage_id" value="<?php echo $passage_id; ?>">
+                <input type="hidden" name="action" value="update_choice">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
+                <button type="submit">Update Choice</button>
+            </form>
+            <p><a href="story_editor.php?story_id=<?php echo $story_id; ?>&passage_id=<?php echo $passage_id; ?>">Back to Story Editor</a></p>
+        </body>
+
+        </html>
+<?php
+        exit();
+    } catch (Exception $e) {
+        echo "Error editing choice: " . htmlspecialchars($e->getMessage());
+        exit();
+    }
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -84,19 +204,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Handle adding choices
             $story_id = intval($_POST['story_id']);
             $passage_id = intval($_POST['passage_id']);
-            $choices = $_POST['choices']; // This will be an array of choice texts
+            $choices_text = $_POST['choices_text']; // Array of choice texts
+            $link_types = $_POST['link_type']; // Array of link types: 'existing' or 'new'
+            $existing_passage_ids = isset($_POST['existing_passage_id']) ? $_POST['existing_passage_id'] : [];
+            $new_passage_texts = isset($_POST['new_passage_text']) ? $_POST['new_passage_text'] : [];
+
             try {
-                foreach ($choices as $choice_text) {
-                    // Create a new empty Passage
-                    addPassage($pdo, $story_id, '');
-                    $new_passage_id = $pdo->lastInsertId();
-                    // Add the Choice linking to the new Passage
-                    addChoice($pdo, $passage_id, $choice_text, $new_passage_id);
+                foreach ($choices_text as $index => $choice_text) {
+                    $link_type = $link_types[$index];
+                    if ($link_type === 'existing') {
+                        // Link to an existing passage
+                        $existing_passage_id = intval($existing_passage_ids[$index]);
+                        if ($existing_passage_id <= 0) {
+                            throw new Exception("Invalid existing passage selected for choice: " . htmlspecialchars($choice_text));
+                        }
+                        // Add the choice linking to the existing passage
+                        addChoice($pdo, $passage_id, $choice_text, $existing_passage_id);
+                    } elseif ($link_type === 'new') {
+                        // Create a new passage and link to it
+                        $new_passage_text = trim($new_passage_texts[$index]);
+                        if (empty($new_passage_text)) {
+                            throw new Exception("New passage text cannot be empty for choice: " . htmlspecialchars($choice_text));
+                        }
+                        // Add the new passage
+                        addPassage($pdo, $story_id, $new_passage_text);
+                        $new_passage_id = $pdo->lastInsertId();
+                        // Link the choice to the new passage
+                        addChoice($pdo, $passage_id, $choice_text, $new_passage_id);
+                    } else {
+                        throw new Exception("Invalid link type for choice: " . htmlspecialchars($choice_text));
+                    }
                 }
                 header("Location: story_editor.php?story_id=$story_id&passage_id=$passage_id&choice_success=true");
                 exit();
-            } catch (PDOException $e) {
+            } catch (Exception $e) {
                 echo "Error adding choice: " . htmlspecialchars($e->getMessage());
+                exit();
+            }
+        } elseif ($action == 'update_choice') {
+            // Handle updating a choice
+            $choice_id = intval($_POST['choice_id']);
+            $story_id = intval($_POST['story_id']);
+            $passage_id = intval($_POST['passage_id']);
+            $choice_text = trim($_POST['choice_text']);
+            $link_type = $_POST['link_type'];
+            $existing_passage_id = isset($_POST['existing_passage_id']) ? intval($_POST['existing_passage_id']) : null;
+            $new_passage_text = isset($_POST['new_passage_text']) ? trim($_POST['new_passage_text']) : null;
+
+            try {
+                if (empty($choice_text)) {
+                    throw new Exception("Choice text cannot be empty.");
+                }
+
+                if ($link_type === 'existing') {
+                    if (!$existing_passage_id || $existing_passage_id <= 0) {
+                        throw new Exception("Invalid existing passage selected.");
+                    }
+                    // Update the choice to link to the existing passage
+                    $sql = "UPDATE Choices SET ChoiceText = :choice_text, NextPassageID = :next_passage_id WHERE ChoiceID = :choice_id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':choice_text' => $choice_text,
+                        ':next_passage_id' => $existing_passage_id,
+                        ':choice_id' => $choice_id
+                    ]);
+                } elseif ($link_type === 'new') {
+                    if (empty($new_passage_text)) {
+                        throw new Exception("New passage text cannot be empty.");
+                    }
+                    // Create a new passage
+                    addPassage($pdo, $story_id, $new_passage_text);
+                    $new_passage_id = $pdo->lastInsertId();
+                    // Update the choice to link to the new passage
+                    $sql = "UPDATE Choices SET ChoiceText = :choice_text, NextPassageID = :next_passage_id WHERE ChoiceID = :choice_id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':choice_text' => $choice_text,
+                        ':next_passage_id' => $new_passage_id,
+                        ':choice_id' => $choice_id
+                    ]);
+                } else {
+                    throw new Exception("Invalid link type.");
+                }
+
+                header("Location: story_editor.php?story_id=$story_id&passage_id=$passage_id&choice_update_success=true");
+                exit();
+            } catch (Exception $e) {
+                echo "Error updating choice: " . htmlspecialchars($e->getMessage());
                 exit();
             }
         } elseif ($action == 'delete_story') {
@@ -154,13 +348,39 @@ if (empty($_SESSION['csrf_token'])) {
         // JavaScript to dynamically add/remove choice fields
         function addChoice() {
             const choicesDiv = document.getElementById('choices');
+            const choiceCount = choicesDiv.querySelectorAll('.choice').length;
             const choiceHTML = `
-                <div class="choice">
-                    <input type="text" name="choices[]" placeholder="Choice text" required>
-                    <button type="button" onclick="removeChoice(this)">Remove Choice</button>
-                </div>`;
+        <div class="choice">
+            <input type="text" name="choices_text[]" placeholder="Choice text" required>
+            
+            <label>
+                <input type="radio" name="link_type[${choiceCount}]" value="existing" checked onchange="toggleLinkType(this)"> Link to Existing Passage
+            </label>
+            <label>
+                <input type="radio" name="link_type[${choiceCount}]" value="new" onchange="toggleLinkType(this)"> Create New Passage
+            </label>
+            
+            <!-- Existing Passages Dropdown -->
+            <div class="link-existing">
+                <select name="existing_passage_id[]" required>
+                    <option value="">-- Select a Passage --</option>
+                    <?php foreach ($passages as $passage): ?>
+                        <option value="<?php echo $passage['PassageID']; ?>">
+                            <?php echo htmlspecialchars(substr($passage['Text'], 0, 50)); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <!-- New Passage Textarea -->
+            <div class="link-new" style="display: none;">
+                <textarea name="new_passage_text[]" placeholder="New passage text"></textarea>
+            </div>
+            
+            <button type="button" onclick="removeChoice(this)">Remove Choice</button>
+        </div>`;
             choicesDiv.insertAdjacentHTML('beforeend', choiceHTML);
-        }
+        } //TODO? adjust name attributes with appropriate indexing if necessary to handle multiple choices correctly
 
         function removeChoice(button) {
             const choiceDiv = button.parentNode;
@@ -171,6 +391,38 @@ if (empty($_SESSION['csrf_token'])) {
         function confirmDelete() {
             return confirm('Are you sure you want to delete this story and all its passages and choices? This action cannot be undone.');
         }
+        // JavaScript function to toggle link type fields
+        function toggleLinkType(radio) {
+            const choiceDiv = radio.closest('.choice');
+            const linkExistingDiv = choiceDiv.querySelector('.link-existing');
+            const linkNewDiv = choiceDiv.querySelector('.link-new');
+
+            if (radio.value === 'existing') {
+                linkExistingDiv.style.display = 'block';
+                linkNewDiv.style.display = 'none';
+                // Make existing passage selection required
+                choiceDiv.querySelector('select[name="existing_passage_id[]"]').required = true;
+                // Remove required attribute from new passage text
+                choiceDiv.querySelector('textarea[name="new_passage_text[]"]').required = false;
+            } else {
+                linkExistingDiv.style.display = 'none';
+                linkNewDiv.style.display = 'block';
+                // Make new passage text required
+                choiceDiv.querySelector('textarea[name="new_passage_text[]"]').required = true;
+                // Remove required attribute from existing passage selection
+                choiceDiv.querySelector('select[name="existing_passage_id[]"]').required = false;
+            }
+        }
+
+        // Update the initial toggle state
+        document.addEventListener('DOMContentLoaded', function() {
+            const radioButtons = document.querySelectorAll('input[name="link_type[]"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    toggleLinkType(this);
+                });
+            });
+        });
     </script>
 </head>
 
@@ -178,6 +430,7 @@ if (empty($_SESSION['csrf_token'])) {
 
     <h1>Story Editor</h1>
 
+    <!-- Success messages -->
     <?php if (isset($_GET['edit_success'])): ?>
         <p style="color: green;">Story successfully updated!</p>
     <?php elseif (isset($_GET['passage_save_success'])): ?>
@@ -188,6 +441,8 @@ if (empty($_SESSION['csrf_token'])) {
         <p style="color: green;">Choices successfully added!</p>
     <?php elseif (isset($_GET['delete_success'])): ?>
         <p style="color: red;">Story successfully deleted.</p>
+    <?php elseif (isset($_GET['choice_update_success'])): ?>
+        <p style="color: green;">Choice successfully updated!</p>
     <?php endif; ?>
 
     <?php if (!$story_id): ?>
@@ -308,6 +563,14 @@ if (empty($_SESSION['csrf_token'])) {
                             <input type="hidden" name="passage_id" value="<?php echo $choice['NextPassageID']; ?>">
                             <button type="submit">Go to Linked Passage</button>
                         </form>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="action" value="edit_choice">
+                            <input type="hidden" name="choice_id" value="<?php echo $choice['ChoiceID']; ?>">
+                            <input type="hidden" name="story_id" value="<?php echo $story_id; ?>">
+                            <input type="hidden" name="passage_id" value="<?php echo $passage_id; ?>">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                            <button type="submit">Edit Choice</button>
+                        </form>
                     </div>
                     <hr>
                 <?php endforeach; ?>
@@ -318,7 +581,32 @@ if (empty($_SESSION['csrf_token'])) {
             <form method="POST">
                 <div id="choices">
                     <div class="choice">
-                        <input type="text" name="choices[]" placeholder="Choice text" required>
+                        <input type="text" name="choices_text[]" placeholder="Choice text" required>
+
+                        <label>
+                            <input type="radio" name="link_type[]" value="existing" checked onchange="toggleLinkType(this)"> Link to Existing Passage
+                        </label>
+                        <label>
+                            <input type="radio" name="link_type[]" value="new" onchange="toggleLinkType(this)"> Create New Passage
+                        </label>
+
+                        <!-- Existing Passages Dropdown -->
+                        <div class="link-existing">
+                            <select name="existing_passage_id[]" required>
+                                <option value="">-- Select a Passage --</option>
+                                <?php foreach ($passages as $passage): ?>
+                                    <option value="<?php echo $passage['PassageID']; ?>">
+                                        <?php echo htmlspecialchars(substr($passage['Text'], 0, 50)); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- New Passage Textarea -->
+                        <div class="link-new" style="display: none;">
+                            <textarea name="new_passage_text[]" placeholder="New passage text"></textarea>
+                        </div>
+
                         <button type="button" onclick="removeChoice(this)">Remove Choice</button>
                     </div>
                 </div>
