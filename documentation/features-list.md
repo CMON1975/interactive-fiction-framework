@@ -25,8 +25,8 @@
 - **Add Choices to Passages:**
     - Users can add choices to a passage.
     - When adding a choice, users can choose to:
-        - **Link to an Existing Passage: Select from a list of existing passages.
-        - **Create a New Passage: Provide new passage text to create and link.
+        - **Link to an Existing Passage:** Select from a list of existing passages.
+        - **Create a New Passage:** Provide new passage text to create and link.
 - **Edit Existing Choices:**
     - Users can edit the text of choices.
     - Users can change the linked passage of a choice:
@@ -35,8 +35,8 @@
 
 ### User Interface and Interaction
 - **Dynamic Forms with JavaScript:**
-    - **Add/Remove Choice Fields: Users can dynamically add or remove choice fields when editing a passage.
-    - **Toggle Between Link Types: Radio buttons allow users to toggle between linking to existing passages or creating new ones.
+    - **Add/Remove Choice Fields:** Users can dynamically add or remove choice fields when editing a passage.
+    - **Toggle Between Link Types:** Radio buttons allow users to toggle between linking to existing passages or creating new ones.
 - **Separate JavaScript File:**
     - JavaScript code (story_editor.js) is moved to a separate file for better organization and maintainability.
 - **Success and Error Messages:**
