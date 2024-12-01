@@ -17,7 +17,7 @@
   - Brief introduction:
     - **35+ years gaming experience**
     - **Graduated from Vancouver Film School** with diplomas in Foundation Art and Design, and Game Design
-    - **Computer science background:** Studied for a Bachelor degree from Sept 2016-Dec 2019 (actually failed Web Programming), returned this Sept after five years to complete a Minor.
+    - **Computer science background:** Studied for a Computing Science Bachelor's degree from Sept 2016-Dec 2019 (actually failed Web Programming!), returned this Sept after five years of a Creative Writing Bachelor's to complete a Minor in Computer Science.
     - **5 years as an independent video game developer and author**
       - **40 published games**
       - **3 published science fiction books**
