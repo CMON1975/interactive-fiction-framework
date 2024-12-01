@@ -200,6 +200,8 @@ For users who are nog logged in, the system can't save their progress in `Storie
 - **Autosave Indicators** to inform users when data state changes.
 - **Undo/Redo Functionality** in addition to the standard text-entry UD/RD, ability to wholesale scrub passage/choice creation.
 - **Versioning** for reverting to previous versions.
+- **Markdown parsing** (Parsedown is a good choice, `wget https://raw.githubusercontent.com/erusev/parsedown/master/Parsedown.php
+`) for ease of editing
 
 ---
 
