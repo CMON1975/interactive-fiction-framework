@@ -139,3 +139,39 @@
 
 ---
 
+## Compact
+## 1. Introduction (5 minutes)
+- Personal background
+- Motivation for the project
+
+## 2. Project Overview (3 minutes)
+- Definition and examples of interactive fiction
+- Purpose and goals of PASSAGES
+
+## 3. Demonstration of Key Features (10 minutes)
+- User authentication and session management
+- Story creation and management
+- Passage and choice management
+- Interactive user interface
+- Playing stories
+
+## 4. Technical Implementation (7 minutes)
+- Backend architecture
+- Security measures
+- Code organization
+- Frontend design
+
+## 5. Challenges and Solutions (3 minutes)
+- Technical challenges
+- Solutions
+
+## 6. Future Enhancements (2 minutes)
+- Features under consideration
+- Not yet implemented
+
+## 7. Conclusion (2 minutes)
+- Summary of achievements
+- Potential impact
+
+## 8. Q&A Session (Up to 5 minutes)
+- Open floor for audience questions

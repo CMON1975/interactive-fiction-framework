@@ -31,3 +31,11 @@
 - **Rehearsal**
   - Practice delivering the presentation with a timer
   - Seek feedback during practice sessions
+
+---
+
+The more you take, the more you leave behind. What am I?
+
+The more we’re taken, the more we’re left behind;
+By depressions of mud or snow we’re defined.
+What are we?
