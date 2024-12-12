@@ -1,17 +1,19 @@
 <?php
 // config.php
 
-$host = 'localhost';
-$db = 'story_db';
-$user = 'root';
-$pass = 'Pass123!';
+// database connection parameters
+$host = 'localhost'; // database server hostname
+$db = 'story_db'; // name of the database
+$user = 'root'; // database username DO NOT USE IN PRODUCTION
+$pass = 'Pass123!'; // database password DO NOT USE IN PRODUCTION
 
 try {
-    // Create a new PDO connection
+    // create a new PDO connection
     $pdo = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
-    // Set PDO error mode to exception for better error handling
+
+    // set PDO error mode to exception for robust error handling
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    // Display an error message and stop the script if the connection fails
+    // terminate the script and display an error message if the connection fails
     die("Connection failed: " . $e->getMessage());
 }

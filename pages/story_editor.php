@@ -1,12 +1,25 @@
 <?php
+/*
+ * Story Editor Script
+ * This script provides the functionality for managing and editing interactive fiction stories. 
+ * Features include:
+ * - Ensuring user authentication before accessing editor functionalities.
+ * - Editing story choices, linking them to existing passages, or creating new ones.
+ * - Validating CSRF tokens to prevent cross-site request forgery.
+ * - Dynamically updating the UI for choice linking.
+ * - Fetching and displaying passages and associated choices for the current story.
+ * 
+ * Note: Error reporting is enabled during development for debugging purposes.
+ */
+
 include 'backend/editor.php';
 
-// Enable error reporting for debugging
+// enable error reporting for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Check if session is active and user is logged in
+// check if session is active and user is logged in
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
@@ -17,7 +30,7 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Handle editing a choice
+// handle editing a choice
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_choice') {
     // CSRF Protection
     if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
@@ -29,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $passage_id = intval($_POST['passage_id']);
 
     try {
-        // Fetch the existing choice
+        // fetch the existing choice
         $stmt = $pdo->prepare("SELECT ChoiceText, NextPassageID FROM Choices WHERE ChoiceID = :choice_id");
         $stmt->execute([':choice_id' => $choice_id]);
         $choice = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -38,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception("Choice not found.");
         }
 
-        // Fetch existing passages for the story
+        // fetch existing passages for the story
         $passages = getPassagesByStoryId($pdo, $story_id);
 
         // Display the edit form
@@ -96,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                 <br><br>
 
-                <!-- Existing Passages Dropdown -->
+                <!-- existing passages dropdown -->
                 <div class="link-existing" <?php echo $choice['NextPassageID'] ? 'style="display: block;"' : 'style="display: none;"'; ?>>
                     <label for="existing_passage_id">Select Passage:</label>
                     <select name="existing_passage_id" id="existing_passage_id">
@@ -109,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </select>
                 </div>
 
-                <!-- New Passage Textarea -->
+                <!-- new passage textarea -->
                 <div class="link-new" <?php echo !$choice['NextPassageID'] ? 'style="display: block;"' : 'style="display: none;"'; ?>>
                     <label for="new_passage_text">New Passage Text:</label>
                     <textarea name="new_passage_text" id="new_passage_text" placeholder="Enter new passage text"></textarea>
@@ -137,10 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Handle form submissions
+// handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // CSRF Protection
+    // CSRF protection
     if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
         die('Invalid CSRF token');
     }
@@ -167,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } elseif ($action == 'save_story') {
-            // Handle updating the story name
+            // handle updating the story name
             $story_id = intval($_POST['story_id']);
             $story_name = $_POST['story_name'];
             try {
@@ -179,18 +192,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } elseif ($action == 'save_passage') {
-            // Handle adding or updating a passage
+            // handle adding or updating a passage
             $story_id = intval($_POST['story_id']);
             $passage_id = isset($_POST['passage_id']) && !empty($_POST['passage_id']) ? intval($_POST['passage_id']) : null;
             $passage_text = $_POST['passage_text'];
             try {
                 if ($passage_id) {
-                    // Update existing passage
+                    // update existing passage
                     updatePassage($pdo, $passage_id, $passage_text);
                     header("Location: story_editor.php?story_id=$story_id&passage_id=$passage_id&passage_save_success=true");
                     exit();
                 } else {
-                    // Add new passage
+                    // add new passage
                     addPassage($pdo, $story_id, $passage_text);
                     $new_passage_id = $pdo->lastInsertId();
                     header("Location: story_editor.php?story_id=$story_id&passage_id=$new_passage_id&passage_add_success=true");
@@ -201,11 +214,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } elseif ($action == 'add_choices') {
-            // Handle adding choices
+            // handle adding choices
             $story_id = intval($_POST['story_id']);
             $passage_id = intval($_POST['passage_id']);
-            $choices_text = $_POST['choices_text']; // Array of choice texts
-            $link_types = $_POST['link_type']; // Array of link types: 'existing' or 'new'
+            $choices_text = $_POST['choices_text']; // array of choice texts
+            $link_types = $_POST['link_type']; // array of link types: 'existing' or 'new'
             $existing_passage_ids = isset($_POST['existing_passage_id']) ? $_POST['existing_passage_id'] : [];
             $new_passage_texts = isset($_POST['new_passage_text']) ? $_POST['new_passage_text'] : [];
 
@@ -213,23 +226,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($choices_text as $index => $choice_text) {
                     $link_type = $link_types[$index];
                     if ($link_type === 'existing') {
-                        // Link to an existing passage
+                        // link to an existing passage
                         $existing_passage_id = intval($existing_passage_ids[$index]);
                         if ($existing_passage_id <= 0) {
                             throw new Exception("Invalid existing passage selected for choice: " . htmlspecialchars($choice_text));
                         }
-                        // Add the choice linking to the existing passage
+                        // add the choice linking to the existing passage
                         addChoice($pdo, $passage_id, $choice_text, $existing_passage_id);
                     } elseif ($link_type === 'new') {
-                        // Create a new passage and link to it
+                        // create a new passage and link to it
                         $new_passage_text = trim($new_passage_texts[$index]);
                         if (empty($new_passage_text)) {
                             throw new Exception("New passage text cannot be empty for choice: " . htmlspecialchars($choice_text));
                         }
-                        // Add the new passage
+                        // add the new passage
                         addPassage($pdo, $story_id, $new_passage_text);
                         $new_passage_id = $pdo->lastInsertId();
-                        // Link the choice to the new passage
+                        // link the choice to the new passage
                         addChoice($pdo, $passage_id, $choice_text, $new_passage_id);
                     } else {
                         throw new Exception("Invalid link type for choice: " . htmlspecialchars($choice_text));
@@ -242,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } elseif ($action == 'update_choice') {
-            // Handle updating a choice
+            // handle updating a choice
             $choice_id = intval($_POST['choice_id']);
             $story_id = intval($_POST['story_id']);
             $passage_id = intval($_POST['passage_id']);
@@ -260,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!$existing_passage_id || $existing_passage_id <= 0) {
                         throw new Exception("Invalid existing passage selected.");
                     }
-                    // Update the choice to link to the existing passage
+                    // update the choice to link to the existing passage
                     $sql = "UPDATE Choices SET ChoiceText = :choice_text, NextPassageID = :next_passage_id WHERE ChoiceID = :choice_id";
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
@@ -272,10 +285,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (empty($new_passage_text)) {
                         throw new Exception("New passage text cannot be empty.");
                     }
-                    // Create a new passage
+                    // create a new passage
                     addPassage($pdo, $story_id, $new_passage_text);
                     $new_passage_id = $pdo->lastInsertId();
-                    // Update the choice to link to the new passage
+                    // update the choice to link to the new passage
                     $sql = "UPDATE Choices SET ChoiceText = :choice_text, NextPassageID = :next_passage_id WHERE ChoiceID = :choice_id";
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
@@ -294,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } elseif ($action == 'delete_story') {
-            // Handle deleting the story and its related data
+            // handle deleting the story and its related data
             $story_id = intval($_POST['story_id']);
             try {
                 deleteStory($pdo, $story_id);
@@ -308,7 +321,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch user's stories
+// fetch user's stories
 $story_id = isset($_GET['story_id']) ? intval($_GET['story_id']) : null;
 $passage_id = isset($_GET['passage_id']) ? intval($_GET['passage_id']) : null;
 
@@ -331,7 +344,7 @@ try {
     exit();
 }
 
-// Generate CSRF token if not set
+// generate CSRF token if not set
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -390,7 +403,7 @@ if (empty($_SESSION['csrf_token'])) {
         </form>
     <?php else: ?>
         <h2>Editing Story: <?php echo htmlspecialchars($currentStory['Story_Name']); ?></h2>
-        <!-- Story Name Edit Form -->
+        <!-- story name edit form -->
         <form method="POST">
             <label for="story_name">Story Name:</label>
             <input type="text" id="story_name" name="story_name"
@@ -404,7 +417,7 @@ if (empty($_SESSION['csrf_token'])) {
             <?php endif; ?>
         </form>
 
-        <!-- Delete Story Button -->
+        <!-- delete story button -->
         <form method="POST" onsubmit="return confirmDelete();">
             <input type="hidden" name="story_id" value="<?php echo $story_id; ?>">
             <input type="hidden" name="action" value="delete_story">
@@ -412,7 +425,7 @@ if (empty($_SESSION['csrf_token'])) {
             <button type="submit" style="background-color: red; color: white;">Delete Story</button>
         </form>
 
-        <!-- Navigation between Passages -->
+        <!-- navigation between passages -->
         <?php if ($passageCount > 0): ?>
             <h3>Navigate to Passage</h3>
             <form method="GET">
@@ -428,10 +441,10 @@ if (empty($_SESSION['csrf_token'])) {
             </form>
         <?php endif; ?>
 
-        <!-- If no passage is selected -->
+        <!-- if no passage is selected -->
         <?php if (!$currentPassage): ?>
             <h2>Add First Passage</h2>
-            <!-- Passage Input Form -->
+            <!-- passage input form -->
             <form method="POST">
                 <label for="passage_text">Passage Text:</label>
                 <textarea id="passage_text" name="passage_text" required></textarea>
@@ -442,7 +455,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <button type="submit">Add Passage</button>
             </form>
         <?php else: ?>
-            <!-- Incoming Choices -->
+            <!-- incoming choices -->
             <?php if (!empty($incomingChoices)): ?>
                 <h3>Incoming Choices</h3>
                 <?php foreach ($incomingChoices as $choice): ?>
@@ -461,7 +474,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <?php endforeach; ?>
             <?php endif; ?>
 
-            <!-- Passage Edit Form -->
+            <!-- passage edit form -->
             <h2>Edit Passage</h2>
             <form method="POST">
                 <label for="passage_text">Passage Text:</label>
@@ -473,7 +486,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <button type="submit">Save Passage</button>
             </form>
 
-            <!-- Outgoing Choices -->
+            <!-- outgoing choices -->
             <?php if (!empty($outgoingChoices)): ?>
                 <h3>Outgoing Choices</h3>
                 <?php foreach ($outgoingChoices as $choice): ?>
@@ -500,7 +513,7 @@ if (empty($_SESSION['csrf_token'])) {
                 <?php endforeach; ?>
             <?php endif; ?>
 
-            <!-- Add Choices Form -->
+            <!-- add choices form -->
             <h3>Add Choices</h3>
             <form method="POST">
                 <div id="choices">
@@ -514,7 +527,7 @@ if (empty($_SESSION['csrf_token'])) {
                             <input type="radio" name="link_type[]" value="new" onchange="toggleLinkType(this)"> Create New Passage
                         </label>
 
-                        <!-- Existing Passages Dropdown -->
+                        <!-- existing passages dropdown -->
                         <div class="link-existing">
                             <select name="existing_passage_id[]" required>
                                 <option value="">-- Select a Passage --</option>
@@ -526,7 +539,7 @@ if (empty($_SESSION['csrf_token'])) {
                             </select>
                         </div>
 
-                        <!-- New Passage Textarea -->
+                        <!-- new passage textarea -->
                         <div class="link-new" style="display: none;">
                             <textarea name="new_passage_text[]" placeholder="New passage text"></textarea>
                         </div>

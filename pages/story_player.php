@@ -1,42 +1,56 @@
 <?php
+/*
+ * Story Player Script
+ * This script handles the functionality for playing interactive fiction stories. 
+ * Key features include:
+ * - Retrieving and displaying the current passage of a story.
+ * - Handling user choices to navigate between passages.
+ * - Managing user progress in the story if logged in (using the StoriesPlayed table).
+ * - Restarting the story and updating progress.
+ * - Ensuring proper redirection and error handling for missing or invalid data.
+ * 
+ * Note: The script requires a valid story ID to function and supports both logged-in and guest users.
+ */
+
+// includes database configuration
 include '/var/www/php/if_config.php';
+// includes authentication functions
 include 'backend/auth.php';
 
-// Start the session
+// starts the session to manage user login state
 session_start();
 $loggedIn = isset($_SESSION['user_id']);
 $user_id = $loggedIn ? $_SESSION['user_id'] : null;
 
-// Get the story ID from the GET parameter
+// retrieves the story ID from the GET parameter
 $story_id = isset($_GET['story_id']) ? intval($_GET['story_id']) : null;
 
-// Redirect to index if no story ID is provided
+// redirects to index page if no story ID is provided
 if (!$story_id) {
     header("Location: index.php");
     exit();
 }
 
-// Handle POST request when a choice is selected
+// handles form submission when a choice is selected
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['choice_id'])) {
+        // retrieves the next passage ID based on the selected choice
         $selected_choice_id = intval($_POST['choice_id']);
-        // Get the next passage ID from the selected choice
         $sql = "SELECT NextPassageID FROM Choices WHERE ChoiceID = :choice_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':choice_id' => $selected_choice_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $next_passage_id = $result['NextPassageID'];
 
-        // Update the user's current passage in StoriesPlayed (if logged in)
+        // updates user's current passage in StoriesPlayed if logged in
         if ($loggedIn) {
-            // Check if an entry exists in StoriesPlayed
             $sql = "SELECT * FROM StoriesPlayed WHERE UserID = :user_id AND StoryID = :story_id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':user_id' => $user_id, ':story_id' => $story_id]);
             $storiesPlayed = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($storiesPlayed) {
-                // Update existing entry
+                // updates an existing entry
                 $sql = "UPDATE StoriesPlayed SET CurrentPassageID = :current_passage_id WHERE UserID = :user_id AND StoryID = :story_id";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
@@ -45,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':story_id' => $story_id
                 ]);
             } else {
-                // Insert new entry
+                // inserts a new entry
                 $sql = "INSERT INTO StoriesPlayed (UserID, StoryID, CurrentPassageID) VALUES (:user_id, :story_id, :current_passage_id)";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
@@ -56,16 +70,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Redirect to the same page with the updated passage ID
+        // redirects to the same page with the updated passage ID
         header("Location: story_player.php?story_id=$story_id&passage_id=$next_passage_id");
         exit();
     } elseif (isset($_POST['restart'])) {
-        // Restart the story
+        // handles story restart
         $first_passage_id = getFirstPassageId($pdo, $story_id);
 
-        // Update the user's current passage in StoriesPlayed (if logged in)
+        // updates user's current passage in StoriesPlayed if logged in
         if ($loggedIn) {
-            // Update existing entry or insert new one
             $sql = "INSERT INTO StoriesPlayed (UserID, StoryID, CurrentPassageID)
                     VALUES (:user_id, :story_id, :current_passage_id)
                     ON DUPLICATE KEY UPDATE CurrentPassageID = :current_passage_id";
@@ -77,53 +90,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
-        // Redirect to the first passage
+        // redirects to the first passage
         header("Location: story_player.php?story_id=$story_id&passage_id=$first_passage_id");
         exit();
     }
 }
 
-// Get the current passage ID
+// determines the current passage ID
 if (isset($_GET['passage_id'])) {
     $current_passage_id = intval($_GET['passage_id']);
 } else {
-    // If the user is logged in, check if they have a saved position
     if ($loggedIn) {
+        // checks for saved position if user is logged in
         $sql = "SELECT CurrentPassageID FROM StoriesPlayed WHERE UserID = :user_id AND StoryID = :story_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':user_id' => $user_id, ':story_id' => $story_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($result && $result['CurrentPassageID']) {
-            $current_passage_id = $result['CurrentPassageID'];
-        } else {
-            // Start at the first passage
-            $current_passage_id = getFirstPassageId($pdo, $story_id);
-        }
+        $current_passage_id = $result && $result['CurrentPassageID'] ? $result['CurrentPassageID'] : getFirstPassageId($pdo, $story_id);
     } else {
-        // Start at the first passage
+        // starts at the first passage if not logged in
         $current_passage_id = getFirstPassageId($pdo, $story_id);
     }
 }
 
-// Fetch the current passage
+// fetches the current passage
 $sql = "SELECT PassageID, Text FROM Passages WHERE PassageID = :passage_id AND StoryID = :story_id";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':passage_id' => $current_passage_id, ':story_id' => $story_id]);
 $current_passage = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// If passage not found, show an error
+// checks if passage exists
 if (!$current_passage) {
     echo "Passage not found.";
     exit();
 }
 
-// Fetch choices for the current passage
+// fetches choices for the current passage
 $sql = "SELECT ChoiceID, ChoiceText FROM Choices WHERE PassageID = :passage_id";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':passage_id' => $current_passage_id]);
 $choices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Function to get the first passage ID of a story
+// function to retrieve the first passage ID of a story
 function getFirstPassageId($pdo, $story_id)
 {
     $sql = "SELECT PassageID FROM Passages WHERE StoryID = :story_id ORDER BY PassageID ASC LIMIT 1";
@@ -133,7 +141,7 @@ function getFirstPassageId($pdo, $story_id)
     return $result ? $result['PassageID'] : null;
 }
 
-// Get story name
+// fetches the story name
 $sql = "SELECT Story_Name FROM Stories WHERE ID = :story_id";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':story_id' => $story_id]);
